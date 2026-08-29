@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+# AndroidIDE-friendly Gradle launcher.
+set -e
+APP_HOME=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if command -v gradle >/dev/null 2>&1; then
+  exec gradle "$@"
+fi
+if [ -n "${ANDROIDIDE_GRADLE_BIN:-}" ] && [ -x "$ANDROIDIDE_GRADLE_BIN" ]; then
+  exec "$ANDROIDIDE_GRADLE_BIN" "$@"
+fi
+echo "ERROR: Gradle executable was not found in PATH. Open this project in AndroidIDE and use its Gradle action, or configure AndroidIDE's Gradle executable."
+exit 127

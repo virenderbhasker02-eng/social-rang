@@ -1,0 +1,15 @@
+SocialStar v18 - Mobile Build Ready
+
+OPEN THIS FOLDER IN ANDROIDIDE:
+SocialStar_v15_production
+
+TEST COMMAND FROM PROJECT ROOT:
+./gradlew :app:assembleDebug
+
+OR in AndroidIDE Gradle dialog:
+:app:assembleDebug
+
+IMPORTANT:
+- Do NOT run ./gradlew from the Downloads parent folder.
+- Do NOT generate a signed APK/AAB until debug build succeeds.
+- If the error says "flutter.sdk not set", configure the Flutter SDK in AndroidIDE.

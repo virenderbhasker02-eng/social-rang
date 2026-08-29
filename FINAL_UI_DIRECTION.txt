@@ -1,0 +1,8 @@
+Social Rang v22 FINAL UI DIRECTION
+
+1. Soft off-white / matte background (not bright white).
+2. Clean modern layout with light cards.
+3. Social Rang's own name, logo and visual identity.
+4. Familiar social-network navigation and interaction patterns.
+5. Do not copy Facebook/Instagram proprietary branding, logos, artwork or source code.
+6. Keep the UI lightweight for 3 GB RAM Android devices.

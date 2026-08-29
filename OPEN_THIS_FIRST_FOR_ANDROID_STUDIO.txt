@@ -1,0 +1,11 @@
+SOCIALSTAR V22 — ANDROID STUDIO HANDOFF
+
+1. Open the android/ folder inside this project.
+2. Do NOT run `gradle init`.
+3. Java: 17.0.20
+4. Gradle executable used during troubleshooting: /storage/internal_new/project/gradle-8.9
+5. The user's phone has 3 GB RAM / 64 GB storage, so use one Gradle worker and no Gradle daemon when building.
+6. First goal: build/install a debug APK.
+7. Do not treat any displayed balance as real money. This v22 package removes the old hard-coded ₹12,480 demo balance.
+8. Read docs/REAL_FEATURE_GAP_REPORT.md before implementing production monetization.
+9. The watch-analytics repository methods are only event plumbing. Real aggregation and fraud prevention must be server-side.

@@ -1,0 +1,27 @@
+SocialStar One-Shot Feature Package
+===================================
+
+All product modules are included in one Flutter project and exposed from the
+All Features screen. Every feature has a test/demo screen and working local UI
+actions, so you do not need to manually create a new Dart file for each button.
+
+Included:
+Social: posts, reactions, comments, share, friends, followers, stories, reels,
+live, discovery, notifications, groups/events.
+Messenger: private chat, group chat, media/files, audio call UI, video call UI.
+Creator: dashboard, ads, stars, gifts, subscriptions, paid content, live gifts,
+earnings, payouts.
+Business: pages, products, marketplace, orders, promotions, collaborations,
+analytics, payment setup placeholder.
+Safety/admin: privacy, blocking/mute, reports, moderation, appeals, verification,
+admin dashboard, settings.
+
+Build:
+1) Open the extracted project root in AndroidIDE.
+2) Run Flutter pub get.
+3) Use Gradle command :app:assembleDebug.
+
+Important: real payments, ads, live video, calls and production multi-user data
+require external provider credentials, secure server-side verification and
+Firebase/Cloud configuration. The app intentionally does not fake real money or
+production transactions.

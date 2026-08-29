@@ -1,0 +1,10 @@
+SOCIAL RANG — FINAL BRANDING
+
+App display name: Social Rang
+Tagline: लोगों से जुड़ें, अपनी दुनिया रंगें।
+UI: soft off-white/matte background, clean modern cards, familiar social-network layout.
+
+Compatibility note: Firebase project and Android application ID remain unchanged in this pass
+to avoid breaking the existing Firebase configuration. The visible app name is Social Rang.
+Before Play Store release, register/check the final brand and update provider/package identifiers
+only after the new Firebase/Play configuration is prepared.

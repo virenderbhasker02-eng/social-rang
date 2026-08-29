@@ -1,0 +1,5 @@
+SocialStar v21 Production Ready
+
+This ZIP is flattened: extract it and open THIS folder as the Flutter project.
+You should see pubspec.yaml, android, lib, and gradlew directly inside this folder.
+Do not open an extra nested SocialStar_v21_production_ready folder.
