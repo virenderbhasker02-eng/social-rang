@@ -31,6 +31,8 @@ jobs:
 
       - name: Build Release App Bundle and APK
         run: |
+          flutter clean
+          flutter pub get
           flutter build apk --release --no-pub
 
       - name: Upload APK Artifact
