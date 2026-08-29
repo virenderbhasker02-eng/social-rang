@@ -37,7 +37,7 @@ jobs:
 
       - name: Build Release App Bundle and APK
         run: |
-          flutter build apk --release --no-pub --no-daemon
+          flutter build apk --release --no-pub
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
