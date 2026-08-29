@@ -32,6 +32,13 @@ jobs:
           echo "android.useAndroidX=true" >> android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
 
+      - name: Setup Keystore
+        run: |
+          echo "storeFile=\$env:RUNNER_TEMP/upload-keystore.jks" >> android/key.properties
+          echo "storePassword='${{ secrets.MY_UPLOAD_STORE_PASSWORD }}'" >> android/key.properties
+          echo "keyPassword='${{ secrets.MY_UPLOAD_KEY_PASSWORD }}'" >> android/key.properties
+          echo "keyAlias='upload'" >> android/key.properties
+
       - name: Install Dependencies
         run: flutter pub get
 
