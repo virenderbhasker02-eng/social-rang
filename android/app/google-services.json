@@ -1,10 +1,29 @@
-import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
-
-class DefaultFirebaseOptions {
-  static FirebaseOptions get currentPlatform => const FirebaseOptions(
-        apiKey: 'AIzaSyDRC4vrSPcC9Jek7R0armpBqt6td6jZ-SU',
-        appId: '1:272492119783:android:935c0a635a91f246660442',
-        messagingSenderId: '272492119783',
-        projectId: 'socialstar-f76bd',
-      );
+{
+  "project_info": {
+    "project_number": "272492119783",
+    "project_id": "socialstar-f76bd",
+    "storage_bucket": "socialstar-f76bd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:272492119783:android:7a7e532f97bc47c9660442",
+        "android_client_info": {
+          "package_name": "com.socialrang.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRC4vrSPcC9Jek7ROarmp8qt6td6jZ-SU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
 }
