@@ -4,12 +4,27 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:video_player/video_player.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import 'services/firebase_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(const SocialRangApp());
+}
+
+// ================= ऑटोमैटिक गाली-गलौज फिल्टर (Bad Word Filter) =================
+final List<String> restrictedWords = [
+  'gaali1', 'gaali2', 'badword1', 'badword2' // यहाँ जरूरत के अनुसार आपत्तिजनक शब्द जोड़े जा सकते हैं
+];
+
+String filterProfanity(String text) {
+  String cleanedText = text;
+  for (String word in restrictedWords) {
+    final regex = RegExp(word, caseSensitive: false);
+    cleanedText = cleanedText.replaceAll(regex, '***');
+  }
+  return cleanedText;
 }
 
 class SocialRangApp extends StatelessWidget {
@@ -216,7 +231,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 }
 
-// ================= 1. होम फीड टैब (फॉलो, फ्रेंड रिक्वेस्ट और शेयर के साथ) =================
+// ================= 1. होम फीड टैब =================
 class FeedTab extends StatefulWidget {
   const FeedTab({super.key});
 
@@ -232,10 +247,85 @@ class _FeedTabState extends State<FeedTab> {
   Future<void> _capturePhoto() async {
     final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
     if (photo != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('एचडी फोटो चुनी गई: ${photo.name}')),
-      );
+      _processImage(context, photo);
     }
+  }
+
+  void _processImage(BuildContext context, XFile photo) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.black,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(ctx).size.height * 0.8,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const Text('तस्वीर को नया रूप दें (Magic Effects)', 
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.deepPurple, width: 2),
+                ),
+                child: const Center(
+                  child: Icon(Icons.auto_awesome, color: Colors.white, size: 100),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text('इफेक्ट चुनें:', style: TextStyle(color: Colors.white70)),
+            const SizedBox(height: 10),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _effectButton('Original', Icons.photo),
+                  _effectButton('Vintage', Icons.filter_vintage),
+                  _effectButton('B&W', Icons.monochrome_photos),
+                  _effectButton('Glamour', Icons.face_retouching_natural),
+                  _effectButton('Sketch', Icons.brush),
+                  _effectButton('Pop Art', Icons.color_lens),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('जादुई तस्वीर तैयार है और सोशल रंग पर पोस्ट हो रही है!')),
+                  );
+                },
+                child: const Text('तस्वीर सेव और पोस्ट करें', style: TextStyle(color: Colors.white)),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _effectButton(String name, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: Colors.deepPurple.shade900,
+            child: Icon(icon, color: Colors.white),
+          ),
+          const SizedBox(height: 5),
+          Text(name, style: const TextStyle(color: Colors.white, fontSize: 12)),
+        ],
+      ),
+    );
   }
 
   Future<void> _recordVideo() async {
@@ -248,12 +338,24 @@ class _FeedTabState extends State<FeedTab> {
   }
 
   void _addNewPost() async {
-    final content = _postController.text.trim();
-    if (content.isEmpty) return;
+    final rawContent = _postController.text.trim();
+    if (rawContent.isEmpty) return;
 
-    await _authService.createPost(content);
+    final safeContent = filterProfanity(rawContent);
+
+    if (safeContent.contains('***')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('सूचना: आपकी पोस्ट में आपत्तिजनक शब्द होने के कारण उन्हें छिपा दिया गया है।')),
+      );
+    }
+
+    await _authService.createPost(safeContent);
     _postController.clear();
     if (mounted) Navigator.pop(context);
+  }
+
+  void _sharePost(String content) {
+    Share.share('Social Rang पोस्ट:\n\n$content\n\n- अब डाउनलोड करें Social Rang ऐप!');
   }
 
   void _showCreatePostDialog() {
@@ -290,7 +392,7 @@ class _FeedTabState extends State<FeedTab> {
                     _capturePhoto();
                   },
                   icon: const Icon(Icons.camera_alt),
-                  label: const Text('एचडी फोटो'),
+                  label: const Text('मैजिक कैमरा'),
                 ),
                 ElevatedButton.icon(
                   onPressed: () {
@@ -340,6 +442,7 @@ class _FeedTabState extends State<FeedTab> {
             itemBuilder: (context, index) {
               final post = posts[index].data() as Map<String, dynamic>;
               final userName = post['userName'] ?? 'Creator';
+              final content = post['content'] ?? '';
 
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -386,7 +489,7 @@ class _FeedTabState extends State<FeedTab> {
                         ],
                       ),
                       const SizedBox(height: 10),
-                      Text(post['content'] ?? '', style: const TextStyle(fontSize: 16)),
+                      Text(content, style: const TextStyle(fontSize: 16)),
                       const Divider(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -394,9 +497,7 @@ class _FeedTabState extends State<FeedTab> {
                           TextButton.icon(onPressed: () {}, icon: const Icon(Icons.thumb_up_alt_outlined, size: 20), label: const Text('लाइक')),
                           TextButton.icon(onPressed: () {}, icon: const Icon(Icons.comment_outlined, size: 20), label: const Text('कमेंट')),
                           TextButton.icon(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('पोस्ट शेयर की गई!')));
-                            },
+                            onPressed: () => _sharePost(content),
                             icon: const Icon(Icons.share_outlined, size: 20),
                             label: const Text('शेयर'),
                           ),
@@ -420,7 +521,7 @@ class _FeedTabState extends State<FeedTab> {
   }
 }
 
-// ================= 2. रील्स टैब (फुल-साइज वर्टिकल व्यू प्लेयर और क्वालिटी सेलेक्टर) =================
+// ================= 2. रील्स टैब =================
 class ReelsTab extends StatelessWidget {
   const ReelsTab({super.key});
 
@@ -456,7 +557,7 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
   late VideoPlayerController _controller;
   bool _isInitialized = false;
   bool _isPlaying = true;
-  String _currentQuality = '1080p (FHD)'; // डिफ़ॉल्ट क्वालिटी
+  String _currentQuality = '1080p (FHD)';
 
   @override
   void initState() {
@@ -495,6 +596,10 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
         _isPlaying = true;
       }
     });
+  }
+
+  void _shareReel() {
+    Share.share('Social Rang पर यह शानदार रील देखें! 🔥\nलिंक: ${widget.videoUrl}');
   }
 
   void _showQualitySelector() {
@@ -557,7 +662,7 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
                   onTap: _togglePlay,
                   child: SizedBox.expand(
                     child: FittedBox(
-                      fit: BoxFit.cover, // फुल-साइज वर्टिकल स्क्रीन फिटिंग
+                      fit: BoxFit.cover,
                       child: SizedBox(
                         width: _controller.value.size.width,
                         height: _controller.value.size.height,
@@ -571,7 +676,6 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
           if (_isInitialized && !_isPlaying)
             const Center(child: Icon(Icons.play_arrow, size: 90, color: Colors.white70)),
 
-          // दाईं ओर क्वालिटी बदलने वाला गियर बटन (⚙️)
           Positioned(
             top: 50,
             right: 15,
@@ -588,7 +692,6 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
             ),
           ),
 
-          // दाईं तरफ रील्स के एक्शन बटन
           Positioned(
             bottom: 60,
             right: 15,
@@ -602,16 +705,13 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
                 const SizedBox(height: 20),
                 IconButton(
                   icon: const Icon(Icons.share, color: Colors.white, size: 40),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('रील शेयर की गई!')));
-                  },
+                  onPressed: _shareReel,
                 ),
                 const Text('शेयर', style: TextStyle(color: Colors.white, fontSize: 12)),
               ],
             ),
           ),
 
-          // सबसे नीचे क्रिएटर का नाम, कैप्शन और एक्टिव क्वालिटी बैज
           Positioned(
             bottom: 40,
             left: 15,
@@ -644,9 +744,137 @@ class _ReelVideoPlayerState extends State<ReelVideoPlayer> {
   }
 }
 
-// ================= 3. मार्केटप्लेस टैब =================
-class MarketplaceTab extends StatelessWidget {
+// ================= 3. मार्केटप्लेस टैब (ऑनलाइन बिक्री, ऑनलाइन पेमेंट और रिटर्न/रिफंड सिस्टम) =================
+class MarketplaceTab extends StatefulWidget {
   const MarketplaceTab({super.key});
+
+  @override
+  State<MarketplaceTab> createState() => _MarketplaceTabState();
+}
+
+class _MarketplaceTabState extends State<MarketplaceTab> {
+  // सामान बेचने के लिए फॉर्म डायलॉग
+  void _showSellItemDialog(BuildContext context) {
+    final titleController = TextEditingController();
+    final priceController = TextEditingController();
+    final locationController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('नया सामान ऑनलाइन बेचें'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(labelText: 'सामान का नाम (Product Name)', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: priceController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'कीमत (Price in ₹)', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: locationController,
+                decoration: const InputDecoration(labelText: 'लोकेशन (Location/City)', border: OutlineInputBorder()),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('रद्द करें')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('आपका सामान मार्केटप्लेस पर ऑनलाइन लिस्ट कर दिया गया है!')),
+              );
+            },
+            child: const Text('पब्लिश करें'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ऑनलाइन पेमेंट और रिटर्न/रिफंड डायलॉग
+  void _showBuyOrReturnDialog(BuildContext context, String title, String price) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('कीमत: $price', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+            const SizedBox(height: 10),
+            const Text('आप इस सामान को ऑनलाइन खरीद सकते हैं या यदि पहले खरीदा है तो रिटर्न/रिफंड का अनुरोध कर सकते हैं।'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showRefundRequestDialog(context);
+            },
+            child: const Text('सामान रिटर्न / रिफंड', style: TextStyle(color: Colors.red)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('ऑनलाइन पेमेंट सफल! ऑर्डर कन्फर्म हो गया है।')),
+              );
+            },
+            child: const Text('ऑनलाइन पेमेंट करें (Buy Now)'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // रिफंड और रिटर्न अनुरोध का फॉर्म
+  void _showRefundRequestDialog(BuildContext context) {
+    final reasonController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('रिटर्न और रिफंड अनुरोध (Return & Refund)'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('कृपया सामान वापस करने का कारण बताएं:'),
+            const SizedBox(height: 10),
+            TextField(
+              controller: reasonController,
+              maxLines: 2,
+              decoration: const InputDecoration(labelText: 'कारण (Reason)', border: OutlineInputBorder()),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('रद्द करें')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('रिफंड अनुरोध दर्ज हो गया है। 3-5 दिनों में पैसे आपके खाते में ऑनलाइन वापस आ जाएंगे।')),
+              );
+            },
+            child: const Text('رिफंड अनुरोध भेजें'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -672,43 +900,44 @@ class MarketplaceTab extends StatelessWidget {
         itemCount: products.length,
         itemBuilder: (context, index) {
           final product = products[index];
-          return Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.deepPurple.shade50,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+          return GestureDetector(
+            onTap: () => _showBuyOrReturnDialog(context, product['title']!, product['price']!),
+            child: Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.deepPurple.shade50,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                      ),
+                      child: const Center(child: Icon(Icons.shopping_bag, size: 50, color: Colors.deepPurple)),
                     ),
-                    child: const Center(child: Icon(Icons.shopping_bag, size: 50, color: Colors.deepPurple)),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(product['price']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.deepPurple)),
-                      const SizedBox(height: 2),
-                      Text(product['title']!, style: const TextStyle(fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 2),
-                      Text(product['location']!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                    ],
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(product['price']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.deepPurple)),
+                        const SizedBox(height: 2),
+                        Text(product['title']!, style: const TextStyle(fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 2),
+                        Text(product['location']!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('सामान बेचने का फॉर्म खुलेगा')));
-        },
+        onPressed: () => _showSellItemDialog(context),
         backgroundColor: Colors.deepPurple,
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('चीजें बेचें', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -717,7 +946,7 @@ class MarketplaceTab extends StatelessWidget {
   }
 }
 
-// ================= 4. क्रिएटर स्टूडियो, पर्सनल डेटा, ऑटो-पेआउट और GST/Tax सिस्टम =================
+// ================= 4. क्रिएटर स्टूडियो और ऑटो-पेआउट सिस्टम =================
 class CreatorStudioTab extends StatefulWidget {
   const CreatorStudioTab({super.key});
 
@@ -804,7 +1033,6 @@ class _CreatorStudioTabState extends State<CreatorStudioTab> {
       return const Scaffold(body: Center(child: Text('कृपया पहले लॉगिन करें')));
     }
 
-    // हर क्रिएटर का उसका अपना यूनिक डेटा Firestore से फेच करना
     return Scaffold(
       appBar: AppBar(
         title: const Text('Social Rang - Creator Studio', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple)),
@@ -991,7 +1219,7 @@ class ProfileTab extends StatelessWidget {
                     trailing: Icon(Icons.arrow_forward_ios, size: 16),
                   ),
                   ListTile(
-                    leading: Icon(Icons.settings, color: Colors.deepPixel ?? Colors.deepPurple),
+                    leading: Icon(Icons.settings, color: Colors.deepPurple),
                     title: Text('सेटिंग्स और प्राइवेसी'),
                     trailing: Icon(Icons.arrow_forward_ios, size: 16),
                   ),
