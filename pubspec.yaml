@@ -2,6 +2,7 @@ name: socialrang
 description: Social Rang social networking application
 publish_to: "none"
 version: 0.8.0+8
+
 environment:
   sdk: ">=3.3.0 <4.0.0"
 
@@ -20,7 +21,7 @@ dependencies:
   firebase_messaging: ^15.1.5
   image_picker: ^1.1.2
   video_player: ^2.8.6
-  share_plus: ^9.0.0
+  share_plus: ^10.1.2
 
 dev_dependencies:
   flutter_test:
