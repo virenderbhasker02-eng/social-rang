@@ -5,15 +5,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:video_player/video_player.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'services/firebase_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  
-  // Google AdMob SDK इनिशियलाइज़ेशन
-  MobileAds.instance.initialize();
 
   runApp(const SocialRangApp());
 }
@@ -236,7 +232,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 }
 
-// ================= 1. होम फीड टैब (बैनर और फुल स्क्रीन वीडियो एड्स के साथ) =================
+// ================= 1. होम फीड टैब =================
 class FeedTab extends StatefulWidget {
   const FeedTab({super.key});
 
@@ -248,55 +244,6 @@ class _FeedTabState extends State<FeedTab> {
   final _postController = TextEditingController();
   final _authService = FirebaseAuthService();
   final ImagePicker _picker = ImagePicker();
-
-  BannerAd? _bannerAd;
-  bool _isBannerAdLoaded = false;
-  InterstitialAd? _interstitialAd;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadBannerAd();
-    _loadInterstitialAd();
-  }
-
-  void _loadBannerAd() {
-    _bannerAd = BannerAd(
-      adUnitId: 'ca-app-pub-3940256099942544/6300978111', // गूगल टेस्ट बैनर आईडी
-      size: AdSize.banner,
-      request: const AdRequest(),
-      listener: BannerAdListener(
-        onAdLoaded: (ad) => setState(() => _isBannerAdLoaded = true),
-        onAdFailedToLoad: (ad, error) => ad.dispose(),
-      ),
-    )..load();
-  }
-
-  void _loadInterstitialAd() {
-    InterstitialAd.load(
-      adUnitId: 'ca-app-pub-3940256099942544/1033173712', // गूगल टेस्ट इंटरस्टीशियल आईडी
-      request: const AdRequest(),
-      adLoadCallback: InterstitialAdLoadCallback(
-        onAdLoaded: (ad) => _interstitialAd = ad,
-        onAdFailedToLoad: (error) => _interstitialAd = null,
-      ),
-    );
-  }
-
-  void _showInterstitialAdAndPost() {
-    if (_interstitialAd != null) {
-      _interstitialAd!.show();
-      _interstitialAd = null;
-      _loadInterstitialAd();
-    }
-  }
-
-  @override
-  void dispose() {
-    _bannerAd?.dispose();
-    _interstitialAd?.dispose();
-    super.dispose();
-  }
 
   Future<void> _capturePhoto() async {
     final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
@@ -403,9 +350,6 @@ class _FeedTabState extends State<FeedTab> {
       );
     }
 
-    // पोस्ट पब्लिश होते ही फुल-स्क्रीन विज्ञापन प्ले होगा
-    _showInterstitialAdAndPost();
-
     await _authService.createPost(safeContent);
     _postController.clear();
     if (mounted) Navigator.pop(context);
@@ -482,105 +426,91 @@ class _FeedTabState extends State<FeedTab> {
       appBar: AppBar(
         title: const Text('Social Rang - Feed', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple)),
       ),
-      body: Column(
-        children: [
-          // बैनर विज्ञापन व्यू
-          if (_isBannerAdLoaded)
-            Container(
-              alignment: Alignment.center,
-              width: _bannerAd!.size.width.toDouble(),
-              height: _bannerAd!.size.height.toDouble(),
-              child: AdWidget(ad: _bannerAd!),
-            ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _authService.getPostsStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.deepPurple));
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text('अभी कोई पोस्ट नहीं है। नीचे दिए गए बटन से जोड़ें!'));
-                }
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _authService.getPostsStream(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: Colors.deepPurple));
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('अभी कोई पोस्ट नहीं है। नीचे दिए गए बटन से जोड़ें!'));
+          }
 
-                final posts = snapshot.data!.docs;
+          final posts = snapshot.data!.docs;
 
-                return ListView.builder(
-                  itemCount: posts.length,
-                  itemBuilder: (context, index) {
-                    final post = posts[index].data() as Map<String, dynamic>;
-                    final userName = post['userName'] ?? 'Creator';
-                    final content = post['content'] ?? '';
+          return ListView.builder(
+            itemCount: posts.length,
+            itemBuilder: (context, index) {
+              final post = posts[index].data() as Map<String, dynamic>;
+              final userName = post['userName'] ?? 'Creator';
+              final content = post['content'] ?? '';
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    CircleAvatar(
-                                      backgroundColor: Colors.deepPurple.shade100,
-                                      child: Text(userName[0].toUpperCase(), style: const TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold)),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    OutlinedButton(
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('$userName को फॉलो कर लिया गया है')),
-                                        );
-                                      },
-                                      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8), minimumSize: const Size(60, 30)),
-                                      child: const Text('फॉलो', style: TextStyle(fontSize: 12)),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    IconButton(
-                                      icon: const Icon(Icons.person_add, color: Colors.deepPurple, size: 20),
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('$userName को फ्रेंड रिक्वेस्ट भेजी गई')),
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Text(content, style: const TextStyle(fontSize: 16)),
-                            const Divider(height: 20),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                TextButton.icon(onPressed: () {}, icon: const Icon(Icons.thumb_up_alt_outlined, size: 20), label: const Text('लाइक')),
-                                TextButton.icon(onPressed: () {}, icon: const Icon(Icons.comment_outlined, size: 20), label: const Text('कमेंट')),
-                                TextButton.icon(
-                                  onPressed: () => _sharePost(content),
-                                  icon: const Icon(Icons.share_outlined, size: 20),
-                                  label: const Text('शेयर'),
-                                ),
-                              ],
-                            )
-                          ],
-                        ),
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: Colors.deepPurple.shade100,
+                                child: Text(userName[0].toUpperCase(), style: const TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold)),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              OutlinedButton(
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('$userName को फॉलो कर लिया गया है')),
+                                  );
+                                },
+                                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8), minimumSize: const Size(60, 30)),
+                                child: const Text('फॉलो', style: TextStyle(fontSize: 12)),
+                              ),
+                              const SizedBox(width: 6),
+                              IconButton(
+                                icon: const Icon(Icons.person_add, color: Colors.deepPurple, size: 20),
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('$userName को फ्रेंड रिक्वेस्ट भेजी गई')),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
+                      const SizedBox(height: 10),
+                      Text(content, style: const TextStyle(fontSize: 16)),
+                      const Divider(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          TextButton.icon(onPressed: () {}, icon: const Icon(Icons.thumb_up_alt_outlined, size: 20), label: const Text('लाइक')),
+                          TextButton.icon(onPressed: () {}, icon: const Icon(Icons.comment_outlined, size: 20), label: const Text('कमेंट')),
+                          TextButton.icon(
+                            onPressed: () => _sharePost(content),
+                            icon: const Icon(Icons.share_outlined, size: 20),
+                            label: const Text('शेयर'),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showCreatePostDialog,
