@@ -42,6 +42,9 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      - name: Generate App Icon
+        run: dart run flutter_launcher_icons
+
       - name: Build Release App Bundle and APK
         run: |
           flutter build appbundle --release --no-pub --android-skip-build-dependency-validation
