@@ -1,4 +1,4 @@
-name: Build Android App Bundle and Signed APK
+Name: Build Android App Bundle and Signed APK
 
 on:
   push:
@@ -37,7 +37,7 @@ jobs:
           STORE_PASSWORD: ${{ secrets.MY_UPLOAD_STORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.MY_UPLOAD_KEY_PASSWORD }}
         run: |
-          # गिटहब सीक्रेट्स का उपयोग करके परमानेंट कीस्टोर जनरेट करना (ताकि सिग्नेचर कभी न बदले)
+          # गिटहब सीक्रेट्स का उपयोग करके परमानेंट कीस्टोर जनरेट करना
           keytool -genkeypair -v -keystore android/app/upload-keystore.jks -storepass "$STORE_PASSWORD" -alias upload -keypass "$KEY_PASSWORD" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Virender Bhasker, OU=Development, O=SocialRang, L=Ludhiana, ST=Punjab, C=IN" || true
           
           # android/key.properties फाइल तैयार करना
@@ -52,19 +52,12 @@ jobs:
       - name: Generate App Icon
         run: dart run flutter_launcher_icons
 
-      - name: Build Release App Bundle and APK
+      - name: Build Debug APK
         run: |
-          flutter build appbundle --release --no-pub --android-skip-build-dependency-validation
-          flutter build apk --release --no-pub --android-skip-build-dependency-validation --target-platform android-arm,android-arm64,android-x64
-
-      - name: Upload App Bundle Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-bundle
-          path: build/app/outputs/bundle/release/app-release.aab
+          flutter build apk --debug --no-pub --android-skip-build-dependency-validation
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
