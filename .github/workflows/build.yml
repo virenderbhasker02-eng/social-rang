@@ -32,15 +32,18 @@ jobs:
           echo "android.useAndroidX=true" >> android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
 
-      - name: Generate Keystore and Setup Properties
+      - name: Setup Keystore from Secrets
+        env:
+          STORE_PASSWORD: ${{ secrets.MY_UPLOAD_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.MY_UPLOAD_KEY_PASSWORD }}
         run: |
-          # गिटहब सर्वर पर बिना रुके अपने आप कीस्टोर फाइल बना देगा
-          keytool -genkey -v -keystore android/app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload -storepass android -keypass android -dname "CN=Virender Bhasker, OU=Development, O=SocialRang, L=Ludhiana, ST=Punjab, C=IN"
+          # गिटहब सीक्रेट्स का उपयोग करके परमानेंट कीस्टोर जनरेट करना (ताकि सिग्नेचर कभी न बदले)
+          keytool -genkeypair -v -keystore android/app/upload-keystore.jks -storepass "$STORE_PASSWORD" -alias upload -keypass "$KEY_PASSWORD" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Virender Bhasker, OU=Development, O=SocialRang, L=Ludhiana, ST=Punjab, C=IN" || true
           
-          # android/key.properties फाइल में एंट्री कर देगा
+          # android/key.properties फाइल तैयार करना
           echo "storeFile=upload-keystore.jks" > android/key.properties
-          echo "storePassword=android" >> android/key.properties
-          echo "keyPassword=android" >> android/key.properties
+          echo "storePassword=$STORE_PASSWORD" >> android/key.properties
+          echo "keyPassword=$KEY_PASSWORD" >> android/key.properties
           echo "keyAlias=upload" >> android/key.properties
 
       - name: Install Dependencies
