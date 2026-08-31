@@ -1,4 +1,4 @@
-Name: Build Android App Bundle and Signed APK
+name: Build Android App Bundle and Signed APK
 
 on:
   push:
