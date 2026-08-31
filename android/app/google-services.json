@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "579998357349",
+    "project_id": "social-rang",
+    "storage_bucket": "social-rang.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:579998357349:android:5064be29043249254a338c",
+        "android_client_info": {
+          "package_name": "com.socialrang.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJ2pQr3v_yyLC4lJ0llqIoHlPuveAslK4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
