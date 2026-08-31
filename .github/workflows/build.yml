@@ -34,8 +34,8 @@ jobs:
 
       - name: Generate Keystore and Setup Properties
         run: |
-          # गिटहब सर्वर पर खुद-ब-खुद कीस्टोर फाइल बना देगा
-          keytool -genkey -v -keystore android/app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload -storepass android -keypass android
+          # गिटहब सर्वर पर बिना रुके अपने आप कीस्टोर फाइल बना देगा
+          keytool -genkey -v -keystore android/app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload -storepass android -keypass android -dname "CN=Virender Bhasker, OU=Development, O=SocialRang, L=Ludhiana, ST=Punjab, C=IN"
           
           # android/key.properties फाइल में एंट्री कर देगा
           echo "storeFile=upload-keystore.jks" > android/key.properties
