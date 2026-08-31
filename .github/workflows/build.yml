@@ -32,12 +32,16 @@ jobs:
           echo "android.useAndroidX=true" >> android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
 
-      - name: Setup Keystore Properties
+      - name: Generate Keystore and Setup Properties
         run: |
-          echo "storeFile=upload-keystore.jks" >> android/key.properties
-          echo "storePassword='${{ secrets.MY_UPLOAD_STORE_PASSWORD }}'" >> android/key.properties
-          echo "keyPassword='${{ secrets.MY_UPLOAD_KEY_PASSWORD }}'" >> android/key.properties
-          echo "keyAlias='upload'" >> android/key.properties
+          # गिटहब सर्वर पर खुद-ब-खुद कीस्टोर फाइल बना देगा
+          keytool -genkey -v -keystore android/app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload -storepass android -keypass android
+          
+          # android/key.properties फाइल में एंट्री कर देगा
+          echo "storeFile=upload-keystore.jks" > android/key.properties
+          echo "storePassword=android" >> android/key.properties
+          echo "keyPassword=android" >> android/key.properties
+          echo "keyAlias=upload" >> android/key.properties
 
       - name: Install Dependencies
         run: flutter pub get
