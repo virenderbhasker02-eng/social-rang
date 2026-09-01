@@ -67,7 +67,7 @@ class AuthWrapper extends StatelessWidget {
   }
 }
 
-// ================= लॉगिन स्क्रीन =================
+// ================= लॉगिन स्क्रीन (Email & Phone OTP Support) =================
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -78,11 +78,17 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = FirebaseAuthService();
+  final _phoneController = TextEditingController();
+  final _otpController = TextEditingController();
+
+  bool _isPhoneLogin = false;
   bool _isLoading = false;
   bool _isPasswordVisible = false;
+  bool _codeSent = false;
+  String _verificationId = '';
 
-  void _submit(bool isLogin) async {
+  // ईमेल और पासवर्ड से लॉगिन या साइन-अप
+  void _submitEmailLogin(bool isLogin) async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
@@ -96,13 +102,83 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       if (isLogin) {
-        await _authService.signIn(email, password);
+        await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
       } else {
-        await _authService.register(email, password);
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('त्रुटि: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // फोन नंबर पर OTP भेजना
+  void _verifyPhoneNumber() async {
+    String phone = _phoneController.text.trim();
+    if (phone.isEmpty || phone.length < 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('कृपया सही मोबाइल नंबर दर्ज करें')),
+      );
+      return;
+    }
+
+    if (!phone.startsWith('+')) {
+      phone = '+91$phone'; // भारत का कोड ऑटोमैटिक जोड़ देगा
+    }
+
+    setState(() => _isLoading = true);
+
+    await FirebaseAuth.instance.verifyPhoneNumber(
+      phoneNumber: phone,
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        await FirebaseAuth.instance.signInWithCredential(credential);
+        if (mounted) setState(() => _isLoading = false);
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('OTP भेजने में असफल: ${e.message}')),
+        );
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        setState(() {
+          _verificationId = verificationId;
+          _codeSent = true;
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('OTP सफलतापूर्वक भेज दिया गया है!')),
+        );
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {
+        _verificationId = verificationId;
+      },
+    );
+  }
+
+  // OTP वेरीफाई करके लॉगिन करना
+  void _signInWithOTP() async {
+    final smsCode = _otpController.text.trim();
+    if (smsCode.isEmpty || smsCode.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('कृपया 6 अंकों का सही OTP दर्ज करें')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId,
+        smsCode: smsCode,
+      );
+      await FirebaseAuth.instance.signInWithCredential(credential);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('गलत OTP: ${e.toString()}')),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -128,60 +204,131 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text('आपका अपना ग्लोबल सोशल मीडिया और क्रिएटर हब', style: TextStyle(color: Colors.grey)),
-                const SizedBox(height: 32),
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'ईमेल (Email)',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: 'पासवर्ड (Password)',
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.lock),
-                    suffixIcon: IconButton(
-                      icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
+                const SizedBox(height: 24),
+
+                // ईमेल और फोन लॉगिन के बीच स्विच करने के लिए टैब
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('ईमेल लॉगिन'),
+                      selected: !_isPhoneLogin,
+                      onSelected: (val) => setState(() => _isPhoneLogin = false),
+                      selectedColor: Colors.deepPurple.shade100,
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    ChoiceChip(
+                      label: const Text('फोन (OTP) लॉगिन'),
+                      selected: _isPhoneLogin,
+                      onSelected: (val) => setState(() => _isPhoneLogin = true),
+                      selectedColor: Colors.deepPurple.shade100,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
-                if (_isLoading)
-                  const CircularProgressIndicator(color: Colors.deepPurple)
-                else
-                  Column(
-                    children: [
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
-                          onPressed: () => _submit(true),
-                          child: const Text('लॉगिन करें (Login)', style: TextStyle(fontSize: 16)),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: OutlinedButton(
-                          onPressed: () => _submit(false),
-                          child: const Text('नया अकाउंट बनाएँ (Sign Up)', style: TextStyle(fontSize: 16)),
-                        ),
-                      ),
-                    ],
+
+                if (!_isPhoneLogin) ...[
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'ईमेल (Email)',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.email),
+                    ),
                   ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: !_isPasswordVisible,
+                    decoration: InputDecoration(
+                      labelText: 'पासवर्ड (Password)',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+                        onPressed: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  if (_isLoading)
+                    const CircularProgressIndicator(color: Colors.deepPurple)
+                  else
+                    Column(
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+                            onPressed: () => _submitEmailLogin(true),
+                            child: const Text('लॉगिन करें (Login)', style: TextStyle(fontSize: 16)),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: OutlinedButton(
+                            onPressed: () => _submitEmailLogin(false),
+                            child: const Text('नया अकाउंट बनाएँ (Sign Up)', style: TextStyle(fontSize: 16)),
+                          ),
+                        ),
+                      ],
+                    ),
+                ] else ...[
+                  if (!_codeSent) ...[
+                    TextField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'मोबाइल नंबर (Mobile Number)',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.phone),
+                        hintText: '9876543210',
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+                        onPressed: _isLoading ? null : _verifyPhoneNumber,
+                        child: _isLoading 
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('OTP भेजें (Send OTP)', style: TextStyle(fontSize: 16)),
+                      ),
+                    ),
+                  ] else ...[
+                    TextField(
+                      controller: _otpController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: '6 अंकों का OTP दर्ज करें',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.lock_clock),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                        onPressed: _isLoading ? null : _signInWithOTP,
+                        child: _isLoading 
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('OTP वेरीफाई करें और लॉगिन करें', style: TextStyle(fontSize: 16)),
+                      ),
+                    ),
+                  ],
+                ],
               ],
             ),
           ),
