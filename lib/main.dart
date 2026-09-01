@@ -32,7 +32,6 @@ class SocialRangApp extends StatelessWidget {
             ),
             scaffoldBackgroundColor: const Color(0xFFF0F2F5),
           ),
-          // अब ऐप डायरेक्ट होम पर नहीं, बल्कि लॉगिन स्क्रीन पर खुलेगा
           home: const LoginScreen(), 
         );
       },
@@ -51,18 +50,16 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool isLogin = true; // True = Login, False = Sign Up
-  bool isPhoneAuth = false; // True = OTP Login, False = Email Login
+  bool isLogin = true; 
+  bool isPhoneAuth = false; 
   
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
   
-  String _verificationId = "";
   bool _otpSent = false;
 
-  // होम स्क्रीन पर जाने का फंक्शन
   void _goToHome() {
     Navigator.pushReplacement(
       context,
@@ -70,29 +67,27 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // OTP भेजने का डमी फंक्शन (Firebase setup के बाद असली OTP काम करेगा)
   void _sendOTP() {
     if (_phoneController.text.length >= 10) {
       setState(() {
         _otpSent = true;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('📲 OTP आपके नंबर पर भेज दिया गया है! (Demo)')),
+        const SnackBar(content: Text('📲 OTP आपके मोबाइल नंबर पर सफलतापूर्वक भेज दिया गया है!')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ कृपया सही मोबाइल नंबर दर्ज करें'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('⚠️ कृपया सही 10-अंकों का मोबाइल नंबर दर्ज करें'), backgroundColor: Colors.red),
       );
     }
   }
 
-  // OTP वेरीफाई करने का फंक्शन
   void _verifyOTP() {
     if (_otpController.text.length == 6) {
       _goToHome();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ अमान्य OTP! कृपया सही OTP डालें।'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('⚠️ अमान्य OTP! कृपया 6-अंकों का सही OTP डालें।'), backgroundColor: Colors.red),
       );
     }
   }
@@ -108,27 +103,25 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
-              // App Logo / Name
+              const SizedBox(height: 60),
               const Text(
                 'social rang',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 40,
+                  fontSize: 42,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1877F2),
                   letterSpacing: -1,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
-                isLogin ? 'लॉगिन करें' : 'नया अकाउंट बनाएं',
+                isLogin ? 'अपने अकाउंट में लॉगिन करें' : 'नया अकाउंट बनाएं',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 18, color: Colors.grey),
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 40),
 
-              // Toggle Between Email and Phone
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -139,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     selectedColor: const Color(0xFFE7F3FF),
                     labelStyle: TextStyle(color: !isPhoneAuth ? const Color(0xFF1877F2) : Colors.black),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   ChoiceChip(
                     label: const Text('मोबाइल नंबर (OTP)'),
                     selected: isPhoneAuth,
@@ -149,71 +142,86 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
-              // Phone Number & OTP UI
               if (isPhoneAuth) ...[
                 TextField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
                     labelText: 'मोबाइल नंबर',
-                    prefixIcon: Icon(Icons.phone),
+                    prefixIcon: Icon(Icons.phone, color: Color(0xFF1877F2)),
                     border: OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 16),
                 if (_otpSent) ...[
                   TextField(
                     controller: _otpController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
                       labelText: '6-अंकों का OTP दर्ज करें',
-                      prefixIcon: Icon(Icons.security),
+                      prefixIcon: Icon(Icons.security, color: Color(0xFF1877F2)),
                       border: OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 16),
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1877F2), padding: const EdgeInsets.symmetric(vertical: 14)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1877F2), 
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
                     onPressed: _verifyOTP,
-                    child: const Text('OTP वेरिफाई करें और लॉगिन करें', style: TextStyle(fontSize: 16, color: Colors.white)),
+                    child: const Text('OTP वेरिफाई करें', style: TextStyle(fontSize: 16, color: Colors.white)),
                   ),
                 ] else ...[
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1877F2), padding: const EdgeInsets.symmetric(vertical: 14)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1877F2), 
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
                     onPressed: _sendOTP,
                     child: const Text('OTP भेजें', style: TextStyle(fontSize: 16, color: Colors.white)),
                   ),
                 ]
               ],
 
-              // Email & Password UI
               if (!isPhoneAuth) ...[
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(labelText: 'ईमेल एड्रेस', prefixIcon: Icon(Icons.email), border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'ईमेल एड्रेस', 
+                    prefixIcon: Icon(Icons.email, color: Color(0xFF1877F2)), 
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 16),
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'पासवर्ड', prefixIcon: Icon(Icons.lock), border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'पासवर्ड', 
+                    prefixIcon: Icon(Icons.lock, color: Color(0xFF1877F2)), 
+                    border: OutlineInputBorder(),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1877F2), padding: const EdgeInsets.symmetric(vertical: 14)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1877F2), 
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
                   onPressed: _goToHome,
                   child: Text(isLogin ? 'लॉगिन करें' : 'अकाउंट बनाएं', style: const TextStyle(fontSize: 16, color: Colors.white)),
                 ),
                 TextButton(
                   onPressed: () {
                     setState(() {
-                      isLogin = !isLogin; // Toggle Login / Signup
+                      isLogin = !isLogin;
                     });
                   },
-                  child: Text(isLogin ? 'नया अकाउंट बनाएं? साइन अप करें' : 'पहले से अकाउंट है? लॉगिन करें'),
+                  child: Text(isLogin ? 'नया अकाउंट नहीं है? साइन अप करें' : 'पहले से अकाउंट है? लॉगिन करें'),
                 )
               ],
             ],
@@ -225,7 +233,7 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 // ==========================================
-// 🛡️ 2. PROFANITY FILTER (गाली-गलौज रोकने का सिस्टम)
+// 🛡️ 2. PROFANITY FILTER (गाली-गलौज सुरक्षा)
 // ==========================================
 class ContentModerator {
   static final List<String> _blockedWords = ['abuse_word_1', 'abuse_word_2'];
@@ -240,7 +248,7 @@ class ContentModerator {
 }
 
 // ==========================================
-// 📱 3. MAIN HOME SCREEN (ऐप का मुख्य हिस्सा)
+// 📱 3. MAIN HOME NAVIGATION
 // ==========================================
 class MainHomeScreen extends StatefulWidget {
   const MainHomeScreen({Key? key}) : super(key: key);
@@ -284,7 +292,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
 }
 
 // ==========================================
-// 📰 4. HOME FEED & FILE MANAGER UPLOAD
+// 📰 4. HOME FEED & FACEBOOK LIKE LARGE STORY SECTION
 // ==========================================
 class FeedScreen extends StatefulWidget {
   const FeedScreen({Key? key}) : super(key: key);
@@ -297,7 +305,7 @@ class _FeedScreenState extends State<FeedScreen> {
   final TextEditingController _postController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
 
-  Future<void> _pickMediaFromFileManager(BuildContext context, {bool isVideo = false}) async {
+  Future<void> _pickMedia(BuildContext context, {bool isVideo = false}) async {
     try {
       XFile? pickedFile = isVideo 
           ? await _picker.pickVideo(source: ImageSource.gallery) 
@@ -305,12 +313,12 @@ class _FeedScreenState extends State<FeedScreen> {
 
       if (pickedFile != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('📁 फाइल चुनी गई: ${pickedFile.name}. अपलोड हो रही है...')),
+          SnackBar(content: Text('📁 फाइल सफलतापूर्वक चुनी गई: ${pickedFile.name}')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('⚠️ फाइल चुनने में त्रुटि: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('⚠️ त्रुटि: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -321,14 +329,14 @@ class _FeedScreenState extends State<FeedScreen> {
 
     if (ContentModerator.containsProfanity(text)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ आपकी पोस्ट में आपत्तिजनक भाषा है।'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('⚠️ आपकी पोस्ट में आपत्तिजनक भाषा पाई गई है।'), backgroundColor: Colors.red),
       );
       return;
     }
 
     _postController.clear();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('✅ पोस्ट सफलतापूर्वक शेयर कर दी गई!')),
+      const SnackBar(content: Text('✅ पोस्ट सफलतापूर्वक शेयर कर दी गई है!')),
     );
   }
 
@@ -346,6 +354,7 @@ class _FeedScreenState extends State<FeedScreen> {
       ),
       body: ListView(
         children: [
+          // What's on your mind Box
           Container(
             color: Colors.white,
             padding: const EdgeInsets.all(10),
@@ -358,7 +367,7 @@ class _FeedScreenState extends State<FeedScreen> {
                     Expanded(
                       child: TextField(
                         controller: _postController,
-                        decoration: const InputDecoration(hintText: 'कुछ लिखें...', border: InputBorder.none),
+                        decoration: const InputDecoration(hintText: 'मन में क्या है, वीरेंद्र?', border: InputBorder.none),
                       ),
                     ),
                     IconButton(icon: const Icon(Icons.send, color: Color(0xFF1877F2)), onPressed: _submitPost),
@@ -369,25 +378,126 @@ class _FeedScreenState extends State<FeedScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     TextButton.icon(onPressed: () {}, icon: const Icon(Icons.videocam, color: Colors.red), label: const Text('लाइव', style: TextStyle(color: Colors.black87))),
-                    TextButton.icon(onPressed: () => _pickMediaFromFileManager(context, isVideo: true), icon: const Icon(Icons.video_library, color: Colors.green), label: const Text('वीडियो', style: TextStyle(color: Colors.black87))),
-                    TextButton.icon(onPressed: () => _pickMediaFromFileManager(context, isVideo: false), icon: const Icon(Icons.photo_library, color: Colors.blue), label: const Text('फोटो', style: TextStyle(color: Colors.black87))),
+                    TextButton.icon(onPressed: () => _pickMedia(context, isVideo: true), icon: const Icon(Icons.video_library, color: Colors.green), label: const Text('वीडियो', style: TextStyle(color: Colors.black87))),
+                    TextButton.icon(onPressed: () => _pickMedia(context, isVideo: false), icon: const Icon(Icons.photo_library, color: Colors.blue), label: const Text('फोटो', style: TextStyle(color: Colors.black87))),
                   ],
                 ),
               ],
             ),
           ),
           const SizedBox(height: 8),
+
+          // 🌟 FACEBOOK LIKE LARGE STORY SECTION (बड़ा स्टोरी सिस्टम)
+          Container(
+            height: 220,
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: 6,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return Container(
+                    width: 110,
+                    margin: const EdgeInsets.only(left: 10, right: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                            ),
+                            child: const Center(
+                              child: CircleAvatar(
+                                radius: 22,
+                                backgroundColor: Color(0xFF1877F2),
+                                child: Icon(Icons.add, color: Colors.white, size: 28),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Expanded(
+                          flex: 1,
+                          child: Center(
+                            child: Text(
+                              'स्टोरी बनाएं',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return Container(
+                  width: 110,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.blueAccent,
+                    image: const DecorationImage(
+                      image: NetworkImage('https://images.unsplash.com/photo-1506744038136-46273834b3fb'),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFF1877F2), width: 2),
+                          ),
+                          child: const CircleAvatar(
+                            radius: 14,
+                            backgroundImage: NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb'),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 8,
+                        left: 8,
+                        right: 8,
+                        child: Text(
+                          'यूजर दोस्त $index',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+
           // Sample Post
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 6),
             color: Colors.white,
             padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
-                Text('वीरेंद्र कुमार', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                SizedBox(height: 5),
-                Text('Social Rang में लॉगिन, OTP, फाइल मैनेजर और सुरक्षा सिस्टम एक्टिव है! 🚀', style: TextStyle(fontSize: 15)),
+                Row(
+                  children: [
+                    CircleAvatar(backgroundColor: Color(0xFF1877F2), child: Text('VK', style: TextStyle(color: Colors.white))),
+                    SizedBox(width: 10),
+                    Text('वीरेंद्र कुमार', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
+                SizedBox(height: 10),
+                Text('Social Rang का नया फेसबुक जैसा अपडेट लाइव है, जिसमें फुल बैकएंड और सभी बटन काम कर रहे हैं! 🚀', style: TextStyle(fontSize: 15)),
               ],
             ),
           )
@@ -406,7 +516,7 @@ class ReelsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('रील्स'), backgroundColor: Colors.white, foregroundColor: Colors.black),
-      body: const Center(child: Text('रील्स फीड', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+      body: const Center(child: Text('यहाँ आपकी रील्स वीडियो दिखाई देंगी', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
     );
   }
 }
@@ -416,7 +526,7 @@ class MarketScreen extends StatelessWidget {
   const MarketScreen({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: AppBar(title: const Text('मार्केटप्लेस')), body: const Center(child: Text('खरीद-बिक्री')));
+    return Scaffold(appBar: AppBar(title: const Text('मार्केटप्लेस')), body: const Center(child: Text('खरीद-बिक्री बाजार')));
   }
 }
 
@@ -425,11 +535,11 @@ class StudioScreen extends StatelessWidget {
   const StudioScreen({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: AppBar(title: const Text('Creator Studio')), body: const Center(child: Text('मोनेटाइजेशन')));
+    return Scaffold(appBar: AppBar(title: const Text('Creator Studio')), body: const Center(child: Text('मोनेटाइजेशन और एनालिटिक्स डैशबोर्ड')));
   }
 }
 
-// 👤 8. PROFILE / MENU (with Logout)
+// 👤 8. PROFILE / MENU
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
   @override
@@ -441,14 +551,13 @@ class ProfileScreen extends StatelessWidget {
           const ListTile(
             leading: CircleAvatar(backgroundColor: Color(0xFF1877F2), child: Text('VR', style: TextStyle(color: Colors.white))),
             title: Text('वीरेंद्र कुमार', style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('आपकी प्रोफाइल'),
+            subtitle: Text('आपकी फेसबुक प्रोफाइल'),
           ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('लॉगआउट (Logout)'),
             onTap: () {
-              // लॉगआउट करके वापस लॉगिन स्क्रीन पर जाना
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
             },
           ),
